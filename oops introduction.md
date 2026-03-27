@@ -40,11 +40,6 @@ No object in heap
 Difference between == and .equals()?
 =-> In Java, the == operator compares references for objects and checks whether two references point to the same memory location, while for primitive types it compares actual values. The .equals() method is used to compare the content or logical equality of objects and can be overridden to define custom comparison logic. By default, .equals() behaves like ==, but classes like String override it to compare values instead of references.
 
-# 🔹 Rewritten Question
-
-**What is the difference between `==` and `.equals()` in Java?**
-
----
 
 # 🔹 Real Understanding (This is a classic trap)
 
