@@ -118,6 +118,11 @@ How do you correctly explain and defend the use of a custom ClassLoader in Java 
 Which version of Java should we use and why?
 => In production, it is recommended to use Long-Term Support (LTS) versions of Java, such as Java 17 or Java 21, because they provide stability, long-term security updates, and strong ecosystem support. Non-LTS versions have shorter support cycles and are generally not preferred for enterprise applications. Modern LTS versions also offer performance improvements and new language features, making them a better choice over older versions like Java 8.
 
+⚠️ Common Mistakes
+“I use latest Java always” → ❌ careless
+“Java 8 is best” → ❌ outdated
+Not mentioning LTS → ❌ incomplete
+
 What are the types of variables in Java, where are they used, and what are data types and literals (in short)?
 => In Java, there are three main types of variables: local, instance, and static. Local variables are declared inside method, constructor, or block and stored in stack memory, used for temporary data. Instance variables are declared inside a class but outside methods and belong to objects, stored in heap memory. Static variables are declared with the static keyword, shared across all instances, and stored in the method area.
 
@@ -145,9 +150,42 @@ class User {
 }
 
 Each object gets its own age.
+3️⃣ Static (Class) Variables
+
+- Single shared copy per class
+- Loaded when class is loaded
+- Shared across all objects
+- 
+class Counter {
+    static int count;
+}
+
+If 1,000 objects exist → only one count exists.
+
+public class MemoryDemo {
+
+    static int staticCount = 10;     // static variable
+
+    int instanceCount = 5;           // instance variable
+
+    public void calculate() {
+        int localSum = 20;            // local variable
+        System.out.println(localSum);
+    }
+
+    public static void main(String[] args) {
+        MemoryDemo obj1 = new MemoryDemo();
+        MemoryDemo obj2 = new MemoryDemo();
+
+        obj1.calculate();
+        obj2.calculate();
+    }
+}
 
 Default values of variables in Java + why local has no default
 => In Java, instance and static variables are automatically assigned default values by the JVM, such as 0 for numeric types, false for boolean, and null for reference types. However, local variables do not have default values and must be explicitly initialized before use. This is because local variables are stored in stack memory, and Java enforces initialization at compile time to ensure safety and avoid the use of undefined or garbage values.
+
+
 
 
 
