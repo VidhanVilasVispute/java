@@ -226,7 +226,66 @@ Both added → duplicate ❌
 Only one stored ✅
 =================================================
 
+// Class = Blueprint
+// Defines structure (fields) + behavior (methods)
 
+class User {
+
+    // 🔹 Fields / Attributes / State (data of object)
+    int id;
+    String name;
+
+    // 🔹 Constructor (used during object creation)
+    User(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    // 🔹 Method / Behavior (what object can do)
+    void display() {
+        System.out.println("Id: " + id);
+        System.out.println("Name: " + name);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+
+        // 🔴 Object Creation (Step by step)
+
+        // 1. Declaration (reference variable)
+        User u1;
+
+        // 2. Instantiation (object created in heap)
+        u1 = new User(1, "John");
+
+        // 👉 Combined (recommended)
+        User u2 = new User(2, "Alice");
+
+        // 🔴 Assign values (already done via constructor)
+        // OR manually:
+        u1.id = 10;
+        u1.name = "Bob";
+
+        // 🔴 Calling methods using object
+        u1.display();
+        u2.display();
+
+        // 🔴 Multiple references pointing to same object
+        User u3 = u1;
+
+        // Change using one reference
+        u3.name = "Changed Name";
+
+        // Affects same object
+        u1.display(); // Name will be "Changed Name"
+
+        // 🔴 Null reference case
+        User u4 = null;
+
+        // u4.display(); ❌ → NullPointerException
+    }
+}
 
 
 
