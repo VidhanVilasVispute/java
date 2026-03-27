@@ -186,6 +186,44 @@ Default values of variables in Java + why local has no default
 => In Java, instance and static variables are automatically assigned default values by the JVM, such as 0 for numeric types, false for boolean, and null for reference types. However, local variables do not have default values and must be explicitly initialized before use. This is because local variables are stored in stack memory, and Java enforces initialization at compile time to ensure safety and avoid the use of undefined or garbage values.
 
 
+What are the types of type conversion and casting in Java?
+=> In Java, type conversion is broadly classified into implicit and explicit. Implicit conversion, also known as widening, is performed automatically by the JVM when converting a smaller data type to a larger one, such as int to double, and it is safe. Explicit conversion, or narrowing, requires manual casting using the cast operator when converting a larger type to a smaller one, which may result in data loss. 
+
+Additionally, in object-oriented programming, upcasting refers to converting a child object to a parent type implicitly, while downcasting is the explicit conversion of a parent reference back to a child type and can lead to runtime exceptions if not handled properly.
+
+🔴 Full Classification (Say This Clearly)
+Type	Conversion	Manual?	Safe?
+Widening	Small → Large	No	Yes
+Narrowing	Large → Small	Yes	No
+Upcasting	Child → Parent	No	Yes
+Downcasting	Parent → Child	Yes	Risky
+
+1. Type Conversion (Implicit / Widening)
+2. Example:
+int a = 10;
+double b = a; // automatic
+
+👉 No data loss
+👉 Safe conversion
+
+Order:
+byte → short → int → long → float → double
+
+2. Type Casting (Explicit / Narrowing)
+
+ Example:
+ 
+double d = 10.5;
+int x = (int) d;
+
+👉 Data loss possible
+👉 Must use (type)
+
+
+What is type promotion in Java expressions? 
+=> Type promotion in Java is the automatic conversion of smaller data types into larger data types during expression evaluation to avoid data loss and ensure consistent computation.
+
+
 
 
 
