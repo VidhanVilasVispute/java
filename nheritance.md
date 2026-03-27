@@ -365,5 +365,247 @@ That sentence shows **real understanding**.
 ❌ “`this` and `super` are objects” → WRONG
 ❌ “You can use both in constructor” → WRONG
 
+Good. Now we stop spoon-feeding and start testing.
+
+These are the kinds of questions where candidates *think* they know inheritance—and then crash.
+
+---
+
+# 🔥 Question 1 — Method Overriding vs Overloading (Trap)
+
+```java
+class A {
+    void show(int x) {
+        System.out.println("A");
+    }
+}
+
+class B extends A {
+    void show(double x) {
+        System.out.println("B");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A obj = new B();
+        obj.show(10);
+    }
+}
+```
+
+## ❓ What is the output?
+
+👉 Most people say **B** → WRONG.
+
+---
+
+# 🔥 Question 2 — Runtime Polymorphism
+
+```java
+class A {
+    void show() {
+        System.out.println("A");
+    }
+}
+
+class B extends A {
+    void show() {
+        System.out.println("B");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A obj = new B();
+        obj.show();
+    }
+}
+```
+
+## ❓ Output?
+
+---
+
+# 🔥 Question 3 — Variable Hiding (Very Important)
+
+```java
+class A {
+    int x = 10;
+}
+
+class B extends A {
+    int x = 20;
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A obj = new B();
+        System.out.println(obj.x);
+    }
+}
+```
+
+## ❓ Output?
+
+👉 If you treat variables like methods, you fail.
+
+---
+
+# 🔥 Question 4 — `super` Keyword
+
+```java
+class A {
+    int x = 10;
+}
+
+class B extends A {
+    int x = 20;
+
+    void print() {
+        System.out.println(x);
+        System.out.println(super.x);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        B obj = new B();
+        obj.print();
+    }
+}
+```
+
+## ❓ Output?
+
+---
+
+# 🔥 Question 5 — Constructor Execution Order
+
+```java
+class A {
+    A() {
+        System.out.println("A Constructor");
+    }
+}
+
+class B extends A {
+    B() {
+        System.out.println("B Constructor");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        new B();
+    }
+}
+```
+
+## ❓ Output order?
+
+---
+
+# 🔥 Question 6 — Final Method (Concept Check)
+
+```java
+class A {
+    final void show() {
+        System.out.println("A");
+    }
+}
+
+class B extends A {
+    void show() {
+        System.out.println("B");
+    }
+}
+```
+
+## ❓ What happens?
+
+---
+
+# 🔥 Question 7 — Static Method (Hidden Trap)
+
+```java
+class A {
+    static void show() {
+        System.out.println("A");
+    }
+}
+
+class B extends A {
+    static void show() {
+        System.out.println("B");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A obj = new B();
+        obj.show();
+    }
+}
+```
+
+## ❓ Output?
+
+👉 If you think runtime polymorphism applies here, you're wrong.
+
+---
+
+# 🔥 Question 8 — Private Method (Advanced Trap)
+
+```java
+class A {
+    private void show() {
+        System.out.println("A");
+    }
+
+    void call() {
+        show();
+    }
+}
+
+class B extends A {
+    void show() {
+        System.out.println("B");
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        A obj = new B();
+        obj.call();
+    }
+}
+```
+
+## ❓ Output?
+
+---
+
+# 🚨 Brutal Instructions
+
+Don’t guess.
+Write answers like this:
+
+```
+Q1: ?
+Q2: ?
+...
+Q8: ?
+```
+
+Then I’ll:
+
+* Tear apart your mistakes
+* Fix your thinking
+* Explain ONLY where you’re weak
+
+---
+
+If you get more than 2 wrong → your inheritance understanding is still shallow.
 
 
