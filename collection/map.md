@@ -1,0 +1,1 @@
+HashMap is a hash table–based implementation of Map in Java that stores key-value pairs using an array of buckets. It uses hashing to compute the index and handles collisions using linked lists or red-black trees in Java 8+. It provides O(1) average time complexity for put and get but depends on proper hashCode and equals implementations.
