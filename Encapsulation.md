@@ -476,6 +476,80 @@ public final class Money {           // 1. final class — no subclassing
 }
 ```
 
+## Step 1: `public final class`
+
+* Prevents inheritance
+* No subclass can modify behavior
+
+### Concept:
+
+* Locks the design completely
+* No extension = no rule-breaking
+
+> “This blueprint is final. No modifications allowed.”
+
+---
+
+## Step 2: `private final` Fields
+
+* `private` → No direct access from outside
+* `final` → Value can be assigned **only once**
+
+### Result:
+
+* State cannot be changed after construction
+* Full control over internal data
+
+---
+
+## Step 3: Constructor with Validation
+
+* All validation happens **only at object creation**
+
+### Behavior:
+
+* Invalid data → throw exception
+* Valid data → object created
+
+### Key Point:
+
+* No need to re-check later
+* Object is **guaranteed valid forever**
+
+---
+
+## Step 4: Only Getters, NO Setters
+
+* Provide read access only
+* No method allows modification
+
+### Result:
+
+* Object becomes **read-only**
+* No accidental or illegal changes
+
+---
+
+## Step 5: Return NEW Object for Changes
+
+### Critical Rule:
+
+* Never modify existing object
+* Always create a new one
+
+### Example:
+
+```java
+Money m3 = m1.add(m2);
+```
+
+### What actually happens:
+
+* `m1` → unchanged
+* `m2` → unchanged
+* `m3` → new object with result
+
+
 ```java
 Money m1 = new Money(100, "INR");
 Money m2 = new Money(50, "INR");
@@ -484,36 +558,39 @@ Money m3 = m1.add(m2);  // m1 and m2 unchanged — m3 is new
 System.out.println(m1);  // 100.0 INR
 System.out.println(m3);  // 150.0 INR
 ```
-Step 1: public final class
-→ No one can create a subclass and change the rules.
-Like saying: “This design is final, no one can modify the blueprint.”
-Step 2: private final fields
-→ private = no one can access directly
-→ final = once value is set in constructor, it can never be changed again.
+
+*`m1` and *`m2` remain exactly the same forever.
+Only *`m3 is the new result.
+
+## Why is this the Strongest Form of Encapsulation?
+- No one can accidentally or intentionally break the object.
+- Thread-safe (multiple parts of program can use same Money safely).
+- Safe to use as keys in HashMap or in sets.
+- Much easier to reason about (you don’t have to worry “what changed this?”).
+
 ---
 
 ## 1.8 Under the Hood — How JVM Enforces Access Control
 
-Access modifiers are **enforced at compile time** by `javac`. At the bytecode (`.class`) level, the JVM also checks access at **load/link time** using flags stored in the class file:
+1. At Compile Time (javac)
+    When you write account.balance = -999; and balance is private → compiler refuses to compile.
+    It says: “Error! You cannot access private field.”
+2. At Runtime (JVM)
+    Even if someone creates bad bytecode (very rare), the JVM checks and throws IllegalAccessError.
 
-```
-Each field/method in bytecode has an access_flags value:
-  ACC_PUBLIC    = 0x0001
-  ACC_PRIVATE   = 0x0002
-  ACC_PROTECTED = 0x0004
-```
+But… Reflection can break it (Advanced point)
 
-When you write `acc.balance = -99` where `balance` is `private`, `javac` refuses to compile it. If somehow illegal bytecode was crafted to bypass this, the **JVM verifier** would throw a `IllegalAccessError` at runtime.
+```Java
 
-However — `Reflection` can break encapsulation:
-
-```java
 Field f = BankAccount.class.getDeclaredField("balance");
-f.setAccessible(true);  // bypasses access control!
-f.set(account, -99999);
+f.setAccessible(true);   // Force open the private door!
+f.set(account, -99999);  // Now it changes!
 ```
 
-This is why encapsulation is a **design-level protection**, not a cryptographic guarantee. The JVM module system (`module-info.java` in Java 9+) adds a stronger wall by allowing `--illegal-access` to be denied even for reflection.
+This is like using a master key to open any locked room.
+Reflection is powerful but dangerous. It is mostly used in frameworks (Spring, testing tools), not in normal code.
+
+Java 9+ Module System makes it even harder to break with reflection.
 
 ---
 
@@ -566,6 +643,59 @@ Order order = new Order.Builder()
     .item("Mouse")
     .total(75000)
     .build();
+```
+
+---
+
+# Final Code (Spring Boot + Lombok Version)
+
+```java
+package com.example.order;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Singular;
+import lombok.ToString;
+
+import java.util.List;
+
+@Getter
+@Builder
+@ToString
+public class Order {
+
+    private final String orderId;
+    private final String customerId;
+
+    @Singular
+    private final List<String> items;
+
+    private final double total;
+}
+```
+
+---
+
+## How to Use
+
+```java
+Order order = Order.builder()
+        .orderId("ORD-001")
+        .customerId("CUST-42")
+        .item("Laptop")
+        .item("Mouse")
+        .total(75000)
+        .build();
+
+System.out.println(order);
+```
+
+---
+
+## Output
+
+```text
+Order(orderId=ORD-001, customerId=CUST-42, items=[Laptop, Mouse], total=75)
 ```
 
 ---
@@ -624,23 +754,3 @@ Here are the questions you'll face, with what the interviewer is actually testin
 → Because `String` is immutable by design for thread-safety, security (classloaders use String), and caching (String Pool). This is encapsulation + immutability in action.
 
 ---
-
-## ✅ Chapter 1 Summary
-
-```
-Encapsulation
-├── Bundle data + behavior in one class
-├── private fields — no direct access
-├── Validate in constructors and setters
-├── Avoid setters where not needed
-├── Defensive copying for mutable fields
-├── Immutability = strongest encapsulation
-│   └── final class + final fields + no setters
-├── Builder pattern for complex objects
-├── Java Records = compact immutable encapsulation
-└── Reflection can bypass — Java Modules restrict it
-```
-
----
-
-Ready for **Chapter 2 — Inheritance**? Or want to go deeper on any part of Encapsulation first? 🚀
