@@ -232,24 +232,65 @@ The most important nuance: **private fields ARE in memory** inside the child obj
 
 ## 2.5 The Object in Memory — JVM Internals
 
-When you create a `Dog` object, the JVM allocates memory for **both** `Animal`'s fields and `Dog`'s fields in a single contiguous block on the **Heap**:
+When you create a `Dog` object:
 
-```
-Heap Memory — Dog object
-┌───────────────────────────────────┐
-│  [Object Header]  (mark word,     │  ← Every Java object has this
-│   class pointer)  16 bytes        │
-├───────────────────────────────────┤
-│  Animal part:                     │
-│    name  → (ref to String)        │  ← from Animal
-│    age   → 5                      │  ← from Animal (private, but HERE)
-├───────────────────────────────────┤
-│  Dog part:                        │
-│    breed → (ref to String)        │  ← from Dog
-└───────────────────────────────────┘
+```java
+Dog tommy = new Dog("Tommy", 5, "Golden Retriever");
 ```
 
-The `Dog` object **contains** the `Animal` fields inside itself. They are not in a separate object. This is why `super` doesn't mean a separate object — it's just a **view into the same memory block**.
+You are **not** creating two separate things (one Animal + one Dog).  
+Instead, the JVM creates **ONE single object** in memory that contains **both**:
+
+- Everything from the parent (`Animal`)
+- Everything from the child (`Dog`)
+
+It's like a **sandwich** — the Animal part is the bottom bread + filling, and Dog part is the top bread. But when you eat it, you eat **one sandwich**, not two separate things.
+
+        This is exactly what happens in JVM memory.
+
+---
+
+### How the Dog Object Looks in Heap Memory
+
+```
+Heap Memory — One Single Dog Object
+┌──────────────────────────────────────────────┐
+│   Object Header (16 bytes)                   │  ← Every Java object has this
+│   (contains mark word, class pointer, etc.)  │
+├──────────────────────────────────────────────┤
+│   Animal Part (Inherited)                    │
+│     name   → reference to "Tommy"            │
+│     age    → 5                               │
+├──────────────────────────────────────────────┤
+│   Dog Part (Added by Child)                  │
+│     breed  → reference to "Golden Retriever" │
+└──────────────────────────────────────────────┘
+```
+
+**Important Points:**
+
+- Everything is stored in **one contiguous memory block**.
+- There is **no separate Animal object** in memory.
+- The `Animal` fields (`name` and `age`) are physically inside the `Dog` object.
+- `private` fields like `age` are still present in memory — they are just **not accessible** by name from the `Dog` class code.
+
+---
+
+### Why `super` Does Not Create a New Object
+
+Many students think `super()` creates a parent object.
+
+**Wrong thinking:**
+“First Animal object is created, then Dog object is created on top.”
+
+**Correct thinking:**
+`super(name, age)` just tells the JVM:  
+“Please initialize the Animal part of this same Dog object with these values.”
+
+It’s like telling the factory:  
+“First put the Animal features properly, then add the Dog features.”
+
+Everything stays in **one single object**.
 
 ---
 
