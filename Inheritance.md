@@ -715,33 +715,193 @@ Java solves this by **allowing only single class inheritance** but **multiple in
 
 This is what separates junior devs from senior devs.
 
-**Inheritance:** IS-A → `Dog IS-A Animal`
-**Composition:** HAS-A → `Car HAS-A Engine`
 
-The classic mistake — using inheritance for code reuse when composition is correct:
+
+- **Inheritance** = "IS-A" relationship  
+  The child **is a** type of the parent.
+
+- **Composition** = "HAS-A" relationship  
+  One class **has** another class as a part (it contains it).
+
+**Modern Rule of Thumb (Very Important):**  
+**Prefer Composition over Inheritance**  
+(You will hear this in almost every senior Java interview)
+
+---
+
+### Best Real-Life Analogy
+
+**Inheritance (IS-A):**
+- You are a **Human**.
+- A **Doctor** IS-A Human.
+- A **Teacher** IS-A Human.
+
+The Doctor and Teacher inherit common things from Human (like breathing, eating, having a name).
+
+**Composition (HAS-A):**
+- A **Car** HAS-A Engine.
+- A **Car** HAS-A Steering Wheel.
+- A **Car** HAS-A Wheels.
+
+The Car is **not** an Engine. It **contains** an Engine as a part.
+
+If the Engine breaks, you can replace it easily without changing the whole Car.  
+But if you use inheritance wrongly (Car extends Engine), changing the Engine breaks the Car badly.
+
+---
+
+### Side-by-Side Comparison (Very Clear)
+
+| Feature                    | Inheritance ("IS-A")                          | Composition ("HAS-A")                          |
+|---------------------------|-----------------------------------------------|------------------------------------------------|
+| Relationship              | Dog **is an** Animal                          | Car **has an** Engine                          |
+| Code Reuse                | Good                                          | Better & more flexible                         |
+| Coupling                  | Tight (strong dependency)                     | Loose (easy to change)                         |
+| Flexibility               | Low (changing parent affects all children)    | High (can change parts at runtime)             |
+| When to Use               | When subclass is a true specialized version   | Almost always (unless clear IS-A)              |
+| Problem with Deep Hierarchy | Fragile Base Class Problem                    | No such problem                                |
+
+---
+
+### 1. Inheritance Example (IS-A)
 
 ```java
-// ❌ Wrong — Stack IS-A Vector? No. A Stack shouldn't expose add(index, element)
-// This is exactly what java.util.Stack did and it's considered a design mistake
-class Stack extends Vector {
-    // Now Stack exposes all Vector methods like add(int index, E e)
-    // which breaks Stack semantics
+class Animal {
+    public void eat() {
+        System.out.println("Eating food...");
+    }
 }
 
-// ✅ Right — Stack HAS-A storage mechanism
-class Stack<T> {
-    private final Deque<T> storage = new ArrayDeque<>();  // composition
-
-    public void push(T item) { storage.push(item); }
-    public T pop()           { return storage.pop(); }
-    public T peek()          { return storage.peek(); }
-    public boolean isEmpty() { return storage.isEmpty(); }
-    // Only Stack operations exposed — no Vector leakage
+class Dog extends Animal {        // Dog IS-A Animal
+    public void bark() {
+        System.out.println("Woof Woof!");
+    }
 }
 ```
 
-**The rule (Effective Java, Item 18):**
-> Prefer composition over inheritance, except when a genuine IS-A relationship exists that will hold across **all future uses** of the class.
+**Problem:** If you later change `Animal` class, it may break all subclasses (`Dog`, `Cat`, etc.).
+
+---
+
+### 2. Composition Example (HAS-A) — Better Approach
+
+```java
+// Engine as a separate class
+class Engine {
+    public void start() {
+        System.out.println("Engine started...");
+    }
+    
+    public void stop() {
+        System.out.println("Engine stopped...");
+    }
+}
+
+// Car uses composition
+class Car {
+    private final Engine engine;        // Car HAS-A Engine
+
+    public Car() {
+        this.engine = new Engine();     // Composition
+    }
+
+    public void startCar() {
+        engine.start();                 // Delegate to Engine
+        System.out.println("Car is moving!");
+    }
+
+    public void stopCar() {
+        engine.stop();
+        System.out.println("Car stopped.");
+    }
+}
+```
+
+**Advantages of Composition here:**
+- You can easily replace Engine with ElectricEngine or DieselEngine.
+- Changing Engine does **not** break the Car class.
+- You have full control (you can add, remove, or change behavior).
+
+---
+
+### Full Running Demo Code (Single File)
+
+```java
+public class InheritanceVsCompositionDemo {
+
+    public static void main(String[] args) {
+        
+        System.out.println("=== Inheritance Example (IS-A) ===");
+        Dog dog = new Dog();
+        dog.eat();
+        dog.bark();
+
+        System.out.println("\n=== Composition Example (HAS-A) ===");
+        Car myCar = new Car();
+        myCar.startCar();
+        myCar.stopCar();
+    }
+}
+
+// ====================== INHERITANCE ======================
+class Animal {
+    public void eat() {
+        System.out.println("Eating food...");
+    }
+}
+
+class Dog extends Animal {
+    public void bark() {
+        System.out.println("Woof Woof!");
+    }
+}
+
+// ====================== COMPOSITION ======================
+class Engine {
+    public void start() {
+        System.out.println("Engine started...");
+    }
+    
+    public void stop() {
+        System.out.println("Engine stopped...");
+    }
+}
+
+class Car {
+    private final Engine engine;   // Composition
+
+    public Car() {
+        this.engine = new Engine();
+    }
+
+    public void startCar() {
+        engine.start();
+        System.out.println("Car is running on road!");
+    }
+
+    public void stopCar() {
+        engine.stop();
+        System.out.println("Car is parked.");
+    }
+}
+```
+
+### When Should You Use Which?
+
+**Use Inheritance when:**
+- There is a clear **IS-A** relationship (Dog is an Animal, Square is a Shape).
+- You need polymorphism heavily.
+- The hierarchy is small and stable.
+
+**Use Composition when:**
+- You want flexibility.
+- You are reusing behavior (not type).
+- The relationship can change at runtime.
+- You want to avoid fragile base class problem.
+
+**Golden Rule (Remember this):**
+> **"Favor Composition over Inheritance"** — This is one of the most important design principles in modern Java/Spring Boot development.
+
 
 ---
 
