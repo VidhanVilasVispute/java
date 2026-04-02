@@ -396,6 +396,101 @@ class Dog extends Animal {
 }
 ```
 
+```java
+// Full Running Code - Method Overriding Example
+
+public class MethodOverridingDemo {
+
+    public static void main(String[] args) {
+        
+        System.out.println("=== Method Overriding Demo ===\n");
+
+        // 1. Normal Animal object
+        Animal animal = new Animal();
+        System.out.println("Animal sound: " + animal.sound());
+
+        // 2. Dog object with Animal reference (Polymorphism)
+        Animal dog = new Dog();
+        System.out.println("Dog sound: " + dog.sound());
+
+        // 3. Cat object with Animal reference
+        Animal cat = new Cat();
+        System.out.println("Cat sound: " + cat.sound());
+
+        // 4. Direct Dog and Cat references
+        Dog d = new Dog();
+        Cat c = new Cat();
+        
+        System.out.println("\nDirect calls:");
+        System.out.println("Dog directly: " + d.sound());
+        System.out.println("Cat directly: " + c.sound());
+
+        // 5. Covariant Return Type Example
+        System.out.println("\n=== Covariant Return Type Demo ===");
+        Animal a1 = new Animal().create();
+        Dog d1 = new Dog().create();           // Dog reference can hold Dog object
+        
+        System.out.println("Created: " + a1.getClass().getSimpleName());
+        System.out.println("Created: " + d1.getClass().getSimpleName());
+    }
+}
+
+// ====================== PARENT CLASS ======================
+class Animal {
+
+    public String sound() {
+        return "... (Some generic animal sound)";
+    }
+
+    // Method to demonstrate covariant return type
+    public Animal create() {
+        return new Animal();
+    }
+}
+
+// ====================== CHILD CLASS 1 ======================
+class Dog extends Animal {
+
+    @Override
+    public String sound() {
+        return "Woof! Woof!";
+    }
+
+    @Override
+    public Dog create() {        // Covariant return type (Dog instead of Animal)
+        return new Dog();
+    }
+}
+
+// ====================== CHILD CLASS 2 ======================
+class Cat extends Animal {
+
+    @Override
+    public String sound() {
+        return "Meow! Meow!";
+    }
+}
+
+output =>
+
+=== Method Overriding Demo ===
+
+Animal sound: ... (Some generic animal sound)
+Dog sound: Woof! Woof!
+Cat sound: Meow! Meow!
+
+Direct calls:
+Dog directly: Woof! Woof!
+Cat directly: Meow! Meow!
+
+=== Covariant Return Type Demo ===
+Created: Animal
+Created: Dog
+
+```
+### "Why do we use Covariant Return Type? Is it used to return the child class name?"
+
+    - Yes, Covariant Return Type allows a child class to return its own type (Dog) instead of the parent type (Animal) when overriding a method.
 ---
 
 ## 2.8 Method Hiding vs Method Overriding
@@ -403,7 +498,44 @@ class Dog extends Animal {
 This is the **most common interview trap**:
 
 ```java
+// Static Method Hiding vs Instance Method Overriding
+
+public class StaticVsInstanceDemo {
+
+    public static void main(String[] args) {
+
+        System.out.println("=== Static vs Instance Method Demo ===\n");
+
+        // Case 1: Parent reference, Parent object
+        Parent p1 = new Parent();
+        p1.staticMethod();
+        p1.instanceMethod();
+
+        System.out.println("--------------------------------");
+
+        // Case 2: Child reference, Child object
+        Child c1 = new Child();
+        c1.staticMethod();
+        c1.instanceMethod();
+
+        System.out.println("--------------------------------");
+
+        // Case 3: Most Important - Parent reference, Child object (Polymorphism)
+        Parent p2 = new Child();
+        p2.staticMethod();      // ← What will this print?
+        p2.instanceMethod();    // ← What will this print?
+
+        System.out.println("--------------------------------");
+
+        // Case 4: Direct call using class name (for static)
+        Parent.staticMethod();
+        Child.staticMethod();
+    }
+}
+
+// ====================== PARENT CLASS ======================
 class Parent {
+
     public static void staticMethod() {
         System.out.println("Parent static");
     }
@@ -413,25 +545,67 @@ class Parent {
     }
 }
 
+// ====================== CHILD CLASS ======================
 class Child extends Parent {
-    public static void staticMethod() {    // ← HIDING, not overriding
+
+    // This is NOT overriding → This is called "Method Hiding"
+    public static void staticMethod() {
         System.out.println("Child static");
     }
 
+    // This is TRUE Method Overriding
     @Override
-    public void instanceMethod() {         // ← TRUE overriding
+    public void instanceMethod() {
         System.out.println("Child instance");
     }
 }
 
-// Now observe:
-Parent p = new Child();
 
-p.instanceMethod();   // → "Child instance"  ← runtime decides (polymorphism)
-p.staticMethod();     // → "Parent static"   ← compile time decides (hiding)
+Expected Output:
+text=== Static vs Instance Method Demo ===
+
+Parent static
+Parent instance
+--------------------------------
+Child static
+Child instance
+--------------------------------
+Parent static          ← Static method from Parent (Reference type decides)
+Child instance         ← Instance method from Child (Actual object decides)
+--------------------------------
+Parent static
+Child static
+
 ```
 
-**Why?** Static methods are resolved at **compile time** based on the reference type. Instance methods are resolved at **runtime** based on the actual object type. This is the entire basis of **polymorphism** — covered deeply in Chapter 3.
+### Simple Explanation (Like you're 10 years old)
+
+| Situation                        | Which Method Runs?     | Who Decides?          | Type of Behavior      |
+|----------------------------------|------------------------|-----------------------|-----------------------|
+| `p2.instanceMethod()`            | Child's version        | **Runtime** (Object)  | **Overriding**        |
+| `p2.staticMethod()`              | Parent's version       | **Compile time** (Reference) | **Hiding**         |
+
+### Why This Happens?
+
+- **Instance methods** (non-static):  
+  Java waits until the program is **running** to decide which method to call.  
+  It looks at the **actual object** (`new Child()`), so it calls Child’s `instanceMethod()` → **Polymorphism**
+
+- **Static methods**:  
+  Java decides at **compile time** (before running).  
+  It only looks at the **reference type** (`Parent p2`), so it calls Parent’s `staticMethod()`.
+
+That’s why we say:
+> **Static methods are hidden**, not overridden.
+
+---
+
+### Key Rules to Remember
+
+- You **cannot override** `static` methods.
+- If child declares a static method with same name → it **hides** the parent’s static method.
+- `static` methods belong to the **class**, not to the object.
+- Only **instance methods** support true **Runtime Polymorphism**.
 
 ---
 
