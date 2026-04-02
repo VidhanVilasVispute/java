@@ -171,41 +171,111 @@ When you upcast, you **lose access to child-specific methods** at the reference 
 ### Downcasting — Manual, Can Fail
 
 ```java
-Animal animal = new Dog();  // upcast
+public class UpDownCastingDemo {
 
-// To access Dog-specific methods, downcast:
-Dog dog = (Dog) animal;     // ✅ safe — actual object IS a Dog
-dog.bark();                 // ✅ works
+    public static void main(String[] args) {
 
-// DANGEROUS downcast:
-Animal animal2 = new Cat();
-Dog dog2 = (Dog) animal2;   // ❌ ClassCastException at RUNTIME
-                             // Cat is NOT a Dog
-```
+        System.out.println("=== Upcasting & Downcasting Demo ===\n");
 
-### Safe Downcasting with `instanceof`
+        // ==================== UPCASTING ====================
+        System.out.println("1. Upcasting (Automatic & Safe):");
 
-```java
-// Classic way (Java 1–15)
-if (animal instanceof Dog) {
-    Dog dog = (Dog) animal;   // safe — checked first
-    dog.bark();
+        Dog dog = new Dog("Tommy");
+
+        // Upcasting: Child → Parent (Automatic)
+        Animal animal = dog;           // ← Upcasting happens here
+
+        animal.eat();                  // Works (inherited method)
+        // animal.bark();              // ❌ Compile error - Animal doesn't know bark()
+
+        System.out.println("Upcasting done: Dog object referenced by Animal type\n");
+
+        // ==================== DOWNCASTING ====================
+        System.out.println("2. Downcasting (Manual & Risky):");
+
+        // Correct Downcasting
+        if (animal instanceof Dog) {                    // Always check first!
+            Dog d1 = (Dog) animal;                      // ← Downcasting
+            d1.bark();                                  // Now we can call Dog methods
+            d1.showBreed();
+        }
+
+        System.out.println("\n3. Wrong Downcasting Example:");
+
+        Animal catAnimal = new Cat("Whiskers");
+
+        // Dangerous without check
+        if (catAnimal instanceof Dog) {
+            Dog wrong = (Dog) catAnimal;   // This would throw ClassCastException
+            wrong.bark();
+        } else {
+            System.out.println("Cannot downcast Cat to Dog - Types don't match!");
+        }
+    }
 }
 
-// Modern way — Pattern Matching instanceof (Java 16+)
-if (animal instanceof Dog dog) {   // ← declares variable in one step
-    dog.bark();                    // 'dog' is scoped to this block
+// ====================== PARENT CLASS ======================
+class Animal {
+    protected String name;
+
+    public Animal(String name) {
+        this.name = name;
+    }
+
+    public void eat() {
+        System.out.println(name + " is eating");
+    }
 }
 
-// Even cleaner with switch (Java 21 — Pattern Matching for switch)
-String result = switch (animal) {
-    case Dog d  -> d.breed + " says " + d.sound();
-    case Cat c  -> "Cat says " + c.sound();
-    case Duck k -> "Duck says " + k.sound();
-    default     -> "Unknown animal";
-};
-```
+// ====================== CHILD CLASS 1 ======================
+class Dog extends Animal {
+    private String breed;
 
+    public Dog(String name) {
+        super(name);
+        this.breed = "Golden Retriever";
+    }
+
+    public void bark() {
+        System.out.println(name + " says Woof Woof!");
+    }
+
+    public void showBreed() {
+        System.out.println(name + " is a " + breed);
+    }
+}
+
+// ====================== CHILD CLASS 2 ======================
+class Cat extends Animal {
+
+    public Cat(String name) {
+        super(name);
+    }
+
+    public void meow() {
+        System.out.println(name + " says Meow Meow!");
+    }
+}
+Expected Output:
+=== Upcasting & Downcasting Demo ===
+
+1. Upcasting (Automatic & Safe):
+Tommy is eating
+Upcasting done: Dog object referenced by Animal type
+
+2. Downcasting (Manual & Risky):
+Tommy says Woof Woof!
+Tommy is a Golden Retriever
+
+3. Wrong Downcasting Example:
+Cannot downcast Cat to Dog - Types don't match!
+```
+Golden Rules:
+
+1. Upcasting is always safe.
+2. Downcasting can throw ClassCastException if not careful.
+3. Always use instanceof before downcasting.
+4. Upcasting is the base of Polymorphism.
 ---
 
 ## 3.6 Under the Hood — How JVM Does Dynamic Dispatch (vtable deep dive)
@@ -627,36 +697,3 @@ method(5L);    // → compile error — no long/Long overload
 **Q7. How does the Strategy pattern use polymorphism?**
 → Defines a family of algorithms behind an interface, encapsulates each, and makes them interchangeable at runtime. The context holds an interface reference and calls through it — the JVM dispatches to the correct implementation.
 
----
-
-## ✅ Chapter 3 Summary
-
-```
-Polymorphism
-├── Compile-time (Static)
-│     └── Method Overloading
-│           ├── Resolved by compiler via parameter signature
-│           ├── Type promotion: char→int, float→double etc.
-│           └── Return type alone is NOT sufficient
-│
-├── Runtime (Dynamic)
-│     └── Method Overriding
-│           ├── Resolved by JVM via vtable (invokevirtual)
-│           ├── Reference type → compile decides visibility
-│           ├── Actual object type → runtime decides execution
-│           └── Fields are NOT polymorphic — only methods
-│
-├── Upcasting — implicit, always safe
-├── Downcasting — explicit, use instanceof first
-│     └── Pattern matching instanceof (Java 16+)
-│
-├── Interface polymorphism — production standard
-├── Abstract class — enforces polymorphic contracts
-├── Covariant return types
-├── Strategy pattern — swapping behavior at runtime
-└── instanceof chains = code smell → replace with polymorphism
-```
-
----
-
-Ready for **Chapter 4 — Abstraction**? That's where we tie all 4 OOP pillars together — abstract classes vs interfaces, default methods, when to use which, and how Spring Boot uses abstraction everywhere. 🚀
