@@ -1014,26 +1014,3 @@ new B();
 
 ---
 
-## ✅ Chapter 2 Summary
-
-```
-Inheritance
-├── IS-A relationship — validate before using
-├── extends keyword — single parent only
-├── What's inherited: public + protected members
-│   └── private fields exist in memory but not accessible directly
-├── super keyword — 3 uses: constructor, method, field
-├── Constructor chain: grandparent → parent → child
-├── Method Overriding — runtime, instance methods, vtable dispatch
-├── Method Hiding — compile time, static methods only
-├── final — blocks class extension, method overriding
-├── Types: Single, Multilevel, Hierarchical (no multiple class)
-├── Diamond Problem → solved by disallowing multiple class inheritance
-├── JVM vtable — how dynamic dispatch works internally
-├── Real world: @MappedSuperclass for base entities in Spring Boot
-└── Composition > Inheritance when IS-A doesn't truly hold
-```
-
----
-
-Ready for **Chapter 3 — Polymorphism**? That's where inheritance truly comes alive — runtime dispatch, `instanceof`, pattern matching, and how the JVM makes it all work. 🚀
