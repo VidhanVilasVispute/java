@@ -6,7 +6,9 @@
 Most people say *"inheritance = one class gets the properties of another."*
 That is **incomplete**. Here's the real definition:
 
-> **Inheritance** is a mechanism where a child class **acquires the state and behavior** of a parent class, and can **extend or override** that behavior — establishing an **IS-A relationship** between the two.
+> **Inheritance** is a mechanism where a child class **acquires non-private the state and behavior** of a parent class, and can **extend or override** that behavior — establishing an **IS-A relationship** between the two.
+
+    ⚠️ If a method is private, it is not inherited and cannot be overridden. If a subclass defines a method with the same signature, it is treated as a completely new method and resolved at compile time.
 
 The keyword is **IS-A**. Before using inheritance anywhere, ask:
 
@@ -67,37 +69,137 @@ class Cat extends Animal {
 ## 2.3 Java Inheritance Syntax — Every Keyword Explained
 
 ```java
-public class Animal {                     // Parent / Superclass / Base class
-    protected String name;               // 'protected' so subclasses can access
-    private int age;                      // 'private' — subclass CANNOT access
 
+public class InheritanceExample {
+
+    public static void main(String[] args) {
+        
+        // Creating a Dog object
+        Dog tommy = new Dog("Tommy", 5, "Golden Retriever");
+
+        // Calling methods
+        tommy.eat();           // Inherited from Animal
+        tommy.bark();          // Dog's own method
+        tommy.showBreed();     // Dog's own method
+
+        // Using inherited getter
+        System.out.println("Age from getter: " + tommy.getAge());
+    }
+}
+
+// ====================== PARENT CLASS ======================
+class Animal {                     // Parent / Superclass / Base class
+
+    protected String name;         // Subclasses can access this
+    private int age;               // Subclasses CANNOT access this directly
+
+    // Constructor
     public Animal(String name, int age) {
         this.name = name;
-        this.age = age;
+        this.age = age;             // Age is set here
     }
 
+    // Method that will be inherited
     public void eat() {
         System.out.println(name + " is eating");
     }
 
-    public int getAge() { return age; }   // subclass accesses age through this
+    // Getter for private field (safe way for subclasses)
+    public int getAge() {         // Public door to see age
+        return age;
+    }
 }
 
-public class Dog extends Animal {         // Child / Subclass / Derived class
-    private String breed;
+// ====================== CHILD CLASS ======================
+class Dog extends Animal {         // Child / Subclass / Derived class
 
+    private String breed;          // Dog's own field
+
+    // Constructor
     public Dog(String name, int age, String breed) {
-        super(name, age);                 // MUST call parent constructor first
+        super(name, age);          // MUST call parent constructor first // Send age to parent to set it
         this.breed = breed;
     }
 
+    // Dog's own method
     public void bark() {
-        System.out.println(name + " barks!");  // 'name' accessible — it's protected
-        // age  ← ❌ compile error — 'age' is private in Animal
-        // getAge() ← ✅ inherited public method
+        System.out.println(name + " barks!");           // 'name' is protected → OK
+        System.out.println(name + " is " + getAge() + " years old."); // using getter
+    }
+
+    // Another method specific to Dog
+    public void showBreed() {
+        System.out.println(name + " is a " + breed);
     }
 }
 ```
+
+### Your Question:
+> In the child class `Dog`, we cannot access `private int age` directly.  
+> Then how did we print `"Tommy is 5 years old"` and `"Age from getter: 5"`?
+
+---
+
+### Simple Answer:
+
+Even though `Dog` **cannot touch** the `age` variable directly,  
+it **can ask** the parent class (`Animal`) to tell the age using a **public method** called `getAge()`.
+
+This is the **safe and correct way** in Java.
+
+---
+
+### Let’s Break It Down Super Simply (Like a Story)
+
+1. **What is `private int age`?**
+   - It is locked inside the `Animal` class.
+   - Only code written **inside** `Animal` can touch it directly.
+   - `Dog` is outside, so it cannot write `age = 10;` or `System.out.println(age);`
+
+2. **What is `public int getAge()`?**
+   - This is a **public door** that `Animal` provides.
+   - Anyone (including `Dog`) can call `getAge()` to **ask** for the age.
+   - The `Animal` class itself opens the door and returns the value of `age`.
+
+3. **How does the age become 5?**
+
+   Look at this line carefully:
+
+   ```java
+   public Dog(String name, int age, String breed) {
+       super(name, age);        // ← This line sets the age!
+       this.breed = breed;
+   }
+   ```
+
+   - When you create a Dog:
+     ```java
+     Dog tommy = new Dog("Tommy", 5, "Golden Retriever");
+     ```
+
+   - Java first goes to `Animal` constructor using `super(name, age)`
+   - It passes `5` to Animal’s constructor.
+   - Inside Animal constructor:
+     ```java
+     public Animal(String name, int age) {
+         this.name = name;
+         this.age = age;     // ← Age is set here to 5
+     }
+     ```
+
+   So the age is set **inside the parent class**, not in the child.
+
+4. **How does Dog see the age?**
+
+   In `bark()` method:
+
+   ```java
+   System.out.println(name + " is " + getAge() + " years old.");
+   ```
+
+   - `Dog` calls `getAge()` → which is a public method **inherited** from `Animal`.
+   - `getAge()` runs the code `return age;` (which is inside Animal).
+   - So it safely returns the value 5.
 
 ---
 
