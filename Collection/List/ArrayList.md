@@ -5,7 +5,7 @@
 
 ## 🧠 1. THEORY — What is ArrayList?
 
-`ArrayList` is a **resizable array** implementation of the `List` interface. Unlike a plain array (`int[]`), it can grow and shrink dynamically at runtime.
+`ArrayList` is a **resizable-array implementation** of the `List` interface. It maintains insertion order, allows duplicate and null elements, and provides fast index-based access.
 
 It lives in `java.util` and implements:
 ```
@@ -183,13 +183,33 @@ Pre-sizing avoids repeated `Arrays.copyOf()` calls → major performance gain in
 ### `trimToSize()` and `ensureCapacity()`
 
 ```java
-List<String> list = new ArrayList<>(1000);
-// ... add 10 elements only
+List<String> list = new ArrayList<>(1000);  // creates big array of 1000 slots
 
-list.trimToSize();       // shrinks backing array to exactly size=10
-                         // useful when memory matters
+list.add("A");
+list.add("B");
+// Now list has only 2 elements, but internal array is still size 1000 (wasting memory)
 
-list.ensureCapacity(500); // grows ahead of time — avoids mid-loop resizing
+list.trimToSize();   // Now internal array becomes exactly size 2
+
+// When to use?
+// - When you have finished adding elements and want to save memory.
+// - Especially useful if you created ArrayList with a large initial capacity but ended up adding //   very few elements.
+
+---------------------------------------------------------------------------------------
+
+List<String> list = new ArrayList<>();   // starts with small array (usually 10)
+
+list.ensureCapacity(500);   // Now it prepares array for at least 500 elements
+
+// Now if you add 400-500 elements, no resizing will happen → faster
+for(int i = 0; i < 400; i++) {
+    list.add("item " + i);
+}
+
+// When to use?
+
+// - When you know in advance that you will add many elements.
+// - To avoid multiple slow resizing operations during adding elements in a loop.
 ```
 
 ---
@@ -213,8 +233,13 @@ while (it.hasNext()) {
 // ✅ ALSO CORRECT — Java 8+
 list.removeIf(s -> s.equals("B"));
 ```
+- `Iterator` tracks `expectedModCount`
+- `ArrayList` tracks `modCount` (incremented on every structural change)
+- When you call `list.remove()` directly, `modCount` updates but `expectedModCount` doesn't
+- On next `it.next()` → `modCount != expectedModCount` → **throws exception**
 
-> **Why?** ArrayList has a `modCount` field. The for-each loop's iterator checks `modCount` on every `next()`. If you modify the list externally, `modCount` changes → `CME` is thrown. `iterator.remove()` updates `modCount` correctly.
+> This is called **fail-fast behavior** — a design safety mechanism, not a concurrency issue. Also happens in `HashMap` and `HashSet`.
+
 
 ---
 
