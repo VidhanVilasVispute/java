@@ -5,7 +5,7 @@
 Most people say *"abstraction = hiding implementation using abstract classes and interfaces."*
 That is **incomplete**. Here's the real definition:
 
-> **Abstraction** is the process of exposing **what an object does** while hiding **how it does it** — letting the caller work with a simplified model without needing to know the internal complexity.
+> **Abstraction** is the process of defining a contract that exposes only essential behavior while hiding implementation details. It is achieved using abstract classes and interfaces, and it helps in building flexible, loosely coupled, and maintainable systems.
 
 The keyword is **what vs how**. The caller only needs to know the contract. The implementation is irrelevant to them.
 
@@ -652,6 +652,24 @@ public class TestConfig {
 
 Every layer in Spring Boot talks to the **abstraction above it**, never the implementation below it. This is the **Dependency Inversion Principle** — one of SOLID's core rules.
 
+
+
+## 🔥 What is a Contract?
+
+> **Contract = a set of rules or method signatures that an implementation must follow**
+
+- In Java, **Interface = Contract**
+- It says: *"हे methods असायलाच हवेत"* (these methods must exist)
+
+### Clean Interview Line
+
+> *"A contract in Java is an interface that defines expected behavior through method signatures, without providing implementation."*
+
+### Summary
+
+- **Controller** → uses the contract
+- **Service** → implements the contract
+- Controller is **unaware** of the internal implementation
 ---
 
 ## 4.12 Tying All 4 OOP Pillars Together
