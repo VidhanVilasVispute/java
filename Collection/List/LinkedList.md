@@ -59,18 +59,18 @@ transient Node<E> last;   // tail pointer
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                  DOUBLY LINKED LIST STRUCTURE                    │
-│                                                                  │
-│  first                                              last         │
-│   ↓                                                  ↓           │
+│                  DOUBLY LINKED LIST STRUCTURE                   │
+│                                                                 │
+│  first                                              last        │
+│   ↓                                                  ↓          │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
 │  │ prev │ null  │    │ prev │   ●───┼────│ prev │   ●   │       │
 │  │ item │  "A"  │    │ item │  "B"  │    │ item │  "C"  │       │
 │  │ next │   ●───┼───→│ next │   ●───┼───→│ next │  null │       │
-│  └──────────────┘  ↗ └──────────────┘  ↗ └──────────────┘       │
-│              ←────┘                ←────┘                        │
-│                                                                  │
-│  Each node lives at a RANDOM heap address (not contiguous)       │
+│  └──────────────┘  ↗ └──────────────┘  ↗ └──────────────┘      │
+│              ←────┘                ←────┘                       │
+│                                                                 │
+│  Each node lives at a RANDOM heap address (not contiguous)      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -172,13 +172,13 @@ ArrayList holding 3 elements:
 └────────────────────────────┘
 
 LinkedList holding 3 elements:
-┌──────────┐   ┌──────────┐   ┌──────────┐
-│ Node {   │   │ Node {   │   │ Node {   │
-│  item=A  │   │  item=B  │   │  item=C  │
+┌──────────┐   ┌──────────┐   ┌──────── ──┐
+│ Node {   │   │ Node {   │   │ Node {    │
+│  item=A  │   │  item=B  │   │  item=C   │
 │  next=●──┼──→│  next=●──┼──→│  next=null│
-│  prev=null│ ←┼──●=prev  │ ←┼──●=prev  │
-│ }        │   │ }        │   │ }        │
-└──────────┘   └──────────┘   └──────────┘
+│  prev=null│ ←┼──●=prev  │  ←┼──●=prev   │
+│ }        │   │ }        │   │ }         │
+└──────────┘   └──────────┘   └───── ─────┘
 + LinkedList object (first, last, size)
 
 Each Node = 32 bytes on 64-bit JVM (header + 3 refs + item ref)
@@ -346,7 +346,7 @@ int evict() {
 │  • Cache-friendly iteration    • Size changes unpredictably │
 │                                  and middle inserts common  │
 │                                                             │
-│  In practice: ArrayList wins 90% of the time.              │
+│  In practice: ArrayList wins 90% of the time.               │
 │  LinkedList shines only as a Deque.                         │
 └─────────────────────────────────────────────────────────────┘
 ```
