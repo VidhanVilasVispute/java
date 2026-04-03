@@ -494,7 +494,18 @@ List<String> sub = list.subList(1, 3); // [B, C] — backed by original list
 sub.clear(); // modifies the ORIGINAL list too!
 System.out.println(list); // [A, D, E]
 ```
+How to make a real copy (Safe way)
+If you want a separate independent list, do this:
+```Java
+List<String> safeCopy = new ArrayList<>(list.subList(1, 3));
 
+// OR even better and cleaner:
+List<String> safeCopy2 = list.subList(1, 3).stream().toList(); // Java 16+
+
+// Now you can safely modify safeCopy without touching original list
+safeCopy.clear();
+System.out.println(list); // still [A, B, C, D, E]
+```
 ---
 
 ## 🔥 6. INTERVIEW QUESTIONS
