@@ -19,6 +19,30 @@ You call paymentGateway.charge(amount)
   WHAT  → money is charged
   HOW   → Stripe API, Razorpay SDK, retry logic — caller doesn't care
 ```
+## 🔹 Why Abstraction Exists (REAL Reason)
+
+> ❌ Stop saying *"code reusability"* — give these real reasons instead:
+
+### 1. Decoupling
+
+```java
+Payment p = new UpiPayment();
+// Can switch to:
+Payment p = new CreditCardPayment();
+// No code break.
+```
+
+### 2. Flexibility (Open/Closed Principle)
+
+- Add a new class **without modifying** existing logic.
+
+### 3. Maintainability
+
+- Change internal logic → external code is **unaffected**.
+
+### 4. Testability
+
+- You can **mock interfaces** easily in unit tests.
 
 ---
 
