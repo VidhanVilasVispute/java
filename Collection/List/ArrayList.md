@@ -71,17 +71,17 @@ Internally it calls `Arrays.copyOf()` which uses `System.arraycopy()` (native, v
 
 ```
 ┌─────────────────────────────────────────────┐
-│         ARRAYLIST GROWTH VISUALIZATION       │
+│         ARRAYLIST GROWTH VISUALIZATION      │
 │                                             │
-│  [A][B][C][D][E][F][G][H][I][J]   ← full   │
-│   0  1  2  3  4  5  6  7  8  9             │
+│  [A][B][C][D][E][F][G][H][I][J]   ← full    │
+│   0  1  2  3  4  5  6  7  8  9              │
 │                                             │
 │           add("K") called                   │
 │                ↓                            │
-│  [A][B][C][D][E][F][G][H][I][J][_][_][_]   │
-│   ← old 10 copied ──────────────→ 5 new    │
+│  [A][B][C][D][E][F][G][H][I][J][_][_][_]    │
+│   ← old 10 copied ──────────────→ 5 new     │
 │                                             │
-│  new capacity = 10 + (10>>1) = 15          │
+│  new capacity = 10 + (10>>1) = 15           │
 └─────────────────────────────────────────────┘
 ```
 
@@ -179,7 +179,33 @@ List<Order> orders = new ArrayList<>(expectedSize);
 Pre-sizing avoids repeated `Arrays.copyOf()` calls → major performance gain in loops.
 
 ---
+### Iteration — Know All Ways
 
+```java
+List<Integer> list = Arrays.asList(1, 2, 3, 4);
+
+// 1. Index for loop
+for (int i = 0; i < list.size(); i++) {
+    System.out.println(list.get(i));
+}
+
+// 2. Enhanced for
+for (int num : list) {
+    System.out.println(num);
+}
+
+// 3. Iterator (safe for removal)
+Iterator<Integer> it = list.iterator();
+while (it.hasNext()) {
+    int val = it.next();
+    if (val == 2) it.remove();
+}
+
+// 4. forEach (Java 8)
+list.forEach(System.out::println);
+```
+
+---
 ### `trimToSize()` and `ensureCapacity()`
 
 ```java
