@@ -12,7 +12,7 @@ A `List` in Java is an **ordered collection** that:
 
 Performance characteristics (e.g., random access) depend on the specific implementation.
 
-**Hierarchy:** `Collection → List → ArrayList / LinkedList`
+**Hierarchy:** `Iterable → Collection → List → ArrayList / LinkedList`
 
 ---
 
@@ -23,8 +23,12 @@ Performance characteristics (e.g., random access) depend on the specific impleme
 ### Internal Working
 
 ```java
-Object[] elementData; // backing array
+// Inside java.util.ArrayList source code
+transient Object[] elementData;  // the actual storage
+private int size;                // logical size (not capacity)
 ```
+*`ArrayList` is literally just a plain *`Object[]` array internally. All the "dynamic" magic is just array copying.
+
 
 - Default capacity = **10**
 - When full → resizes automatically
@@ -33,6 +37,7 @@ Object[] elementData; // backing array
 ```
 10 → 15 → 22 → 33 → ...
 ```
+
 
 > ⚠️ Resizing is expensive: creates a new array and copies all data → **O(n)**. If you know the size upfront, always set initial capacity:
 > ```java
