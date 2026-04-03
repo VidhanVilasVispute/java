@@ -292,10 +292,10 @@ List<String> immutable = List.of("A", "B"); // Java 9+
 ### Trap 1 — `remove(int)` vs `remove(Object)`
 
 ```java
-List<Integer> nums = new ArrayList<>(List.of(1, 2, 3));
+List<Integer> nums = new ArrayList<>(List.of(1, 2, 3, 4));
 
 nums.remove(1);          // removes INDEX 1 → list = [1, 3]
-nums.remove(Integer.valueOf(1)); // removes OBJECT 1 → list = [2, 3]
+nums.remove(Integer.valueOf(4)); // his removes the actual OBJECT (value 1) [1,2,3]
 ```
 
 Autoboxing gotcha. With primitives, `remove(int)` is the index overload.
@@ -312,18 +312,176 @@ List<String> shared = new ArrayList<>();
 List<String> safe1 = Collections.synchronizedList(new ArrayList<>());
 List<String> safe2 = new CopyOnWriteArrayList<>(); // better for read-heavy
 ```
+```java
 
+import java.util.ArrayList;
+import java.util.List;
+
+public class ArrayListNotThreadSafe {
+    public static void main(String[] args) throws InterruptedException {
+
+        List<Integer> list = new ArrayList<>();
+
+        // Two threads trying to add numbers at the same time
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                list.add(i);
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (int i = 1000; i < 2000; i++) {
+                list.add(i);
+            }
+        });
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        System.out.println("Final size: " + list.size()); 
+        // Expected: 2000
+        // But you may get 1998, 1995, 1890... or even exception!
+    }
+}
+```
 ---
 
 ### Trap 3 — `equals()` and `contains()`
 
+Imagine you have a **bag of fruits**.  
+You want to check: "Is there an apple in my bag?"
+
+### Simple Example with Strings (Built-in)
+
 ```java
-List<String> list = new ArrayList<>(List.of("hello"));
-list.contains("hello"); // true  — uses .equals()
-list.contains("HELLO"); // false — case sensitive
+List<String> list = new ArrayList<>();
+list.add("hello");
+
+System.out.println(list.contains("hello"));   // true
+System.out.println(list.contains("HELLO"));   // false
 ```
 
-`contains()` calls `equals()` on elements — your custom objects need `equals()` overridden or `contains()` will always return `false`.
+**Why is this happening?**
+
+- `contains()` does **NOT** check the memory address.
+- It checks **"Are these two things the same?"** using the `.equals()` method.
+- String's `.equals()` is **case-sensitive** → "hello" and "HELLO" are **not equal**.
+
+So `contains("hello")` returns `true` because it finds an element where `element.equals("hello")` is true.
+
+---
+
+### The Real Trap – With Your Own Custom Objects
+
+This is where most beginners get confused and waste hours debugging.
+
+```java
+class Student {
+    String name;
+    int rollNo;
+
+    Student(String name, int rollNo) {
+        this.name = name;
+        this.rollNo = rollNo;
+    }
+}
+```
+
+Now let's use it:
+
+```java
+List<Student> students = new ArrayList<>();
+
+Student s1 = new Student("Rahul", 101);
+students.add(s1);
+
+Student s2 = new Student("Rahul", 101);   // Same data, but different object
+
+System.out.println(students.contains(s2));   // ??? What will this print?
+```
+
+**Answer: false**
+
+Even though `s1` and `s2` have **exactly the same** name and roll number, `contains()` returns `false`.
+
+### Why?
+
+Because by default, Java uses the **Object class's equals()** method.
+
+And Object's `equals()` is written like this:
+
+```java
+public boolean equals(Object obj) {
+    return this == obj;   // checks memory address (reference equality)
+}
+```
+
+So `s1.equals(s2)` is actually checking:  
+**"Are s1 and s2 the exact same object in memory?"**
+
+They are **not** the same object → `equals()` returns `false` → `contains()` returns `false`.
+
+---
+
+### The Fix – You Must Override equals() (and hashCode())
+
+You have to tell Java:  
+**"Two students are equal if their rollNo is same"** (or name + rollNo, etc.)
+
+Here’s the **simple and correct** way:
+
+```java
+class Student {
+    String name;
+    int rollNo;
+
+    Student(String name, int rollNo) {
+        this.name = name;
+        this.rollNo = rollNo;
+    }
+
+    // VERY IMPORTANT: Override equals()
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;           // same object
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        Student other = (Student) obj;
+        return rollNo == other.rollNo;          // equal if rollNo is same
+    }
+
+    // You MUST also override hashCode() when you override equals()
+    @Override
+    public int hashCode() {
+        return Objects.hash(rollNo);
+    }
+}
+```
+
+Now this will work:
+
+```java
+students.contains(s2);   // Now returns true  ✅
+```
+
+---
+
+### Super Simple Summary (Remember this forever)
+
+1. `list.contains(x)` **internally calls** `equals()` on the elements.
+2. For **String**, `equals()` already works (but case-sensitive).
+3. For **your own class** (Student, Employee, Product, etc.), `.equals()` does **NOT** work by default.
+4. If you don’t override `equals()`, `contains()` will **almost always return false** for custom objects.
+5. When you override `equals()`, you **must** also override `hashCode()` (especially if using HashSet, HashMap, etc.).
+
+### Golden Rule:
+
+> **If two objects should be considered "the same" in your logic, you MUST override equals() (and hashCode()).**
+
+Otherwise, `contains()`, `remove()`, `indexOf()`, HashSet, HashMap, etc. will behave wrongly.
 
 ---
 
