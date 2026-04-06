@@ -461,6 +461,8 @@ These are powerful methods for submitting multiple tasks at once.
 
 ### `invokeAll()` — Run All, Wait for All
 
+"Start all tasks at the same time. I will wait until every single task is completed."
+
 ```java
 ExecutorService pool = Executors.newFixedThreadPool(3);
 
@@ -483,7 +485,24 @@ for (Future<String> result : results) {
 pool.shutdown();
 ```
 
+### Important Benefit:
+
+- All tasks run in parallel.
+- Total time taken = time of the slowest task.
+- In the example above → Total time ≈ 700ms (not 1500ms).
+
+### ShopSphere Use Case:
+
+- Enriching a product page with data from multiple services:
+   - Get Price
+   - Get Stock
+   - Get Customer Ratings
+
+You need all three results before showing the product page.
+
 ### `invokeAny()` — Run All, Return Fastest
+
+"Start all tasks at the same time. As soon as any one task finishes successfully, give me its result and cancel the others."
 
 ```java
 ExecutorService pool = Executors.newFixedThreadPool(3);
@@ -502,7 +521,24 @@ System.out.println("Payment processed via: " + winner);
 
 pool.shutdown();
 ```
+### What happens internally?
 
+- All 3 tasks start together.
+- As soon as PayU returns success, invokeAny() immediately returns.
+- The other two slower tasks (Razorpay & Stripe) are cancelled automatically.
+
+### ShopSphere Use Case:
+
+- Trying multiple payment gateways (Razorpay, PayU, Stripe, PhonePe).
+- Use whichever responds first → improves user experience.
+- No need to wait for slow gateways.
+---
+Key Points to Remember
+
+- Both methods block the calling thread until they return.
+- Both work with Callable (not plain Runnable).
+- invokeAny() is great for improving speed and user experience.
+- Always call pool.shutdown() when you're done.
 ---
 
 ## 7.9 Scheduled Execution
