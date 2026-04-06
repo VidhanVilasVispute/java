@@ -7,7 +7,14 @@
 
 Before `volatile`, you need to understand **why visibility is a separate problem** from mutual exclusion.
 
-Look at this code — no race condition, just one thread writing, one thread reading:
+Even when there is no race condition, your threads can still behave wrongly.
+In this example:
+
+- Only one thread (main) writes to the variable.
+- Only one thread (worker) reads the variable.
+- Still, the program doesn't work as expected.
+
+The worker thread keeps running forever, even after `stopRequested` is set to `true`.
 
 ```java
 public class VisibilityBug {
@@ -28,7 +35,7 @@ public class VisibilityBug {
 
         Thread.sleep(1000); // let worker run for 1 second
 
-        stopRequested = true; // main thread sets the flag
+        stopRequested = true; // main says "please stop"
         System.out.println("[main] Requested stop");
     }
 }
@@ -37,7 +44,43 @@ public class VisibilityBug {
 **Expected:** worker stops after ~1 second.
 **Actual:** worker runs **forever**. The program never terminates.
 
-No race condition here — only one thread writes. Yet it's broken. Why?
+### Why Does This Happen? (Very Simple Explanation)
+Java has a memory visibility problem.
+
+Here’s what’s really happening:
+
+1. The `worker` thread reads the value of `stopRequested` and remembers it (caches it in its own memory).
+The `main` thread changes `stopRequested` to `true`.
+2. But the `worker` thread does not see this change.
+3. It keeps using its old cached value (`false`).
+
+It’s like:
+
+- Main thread writes a message on a notebook.
+- Worker thread is looking at an old photocopy of the notebook.
+- Worker never looks at the latest notebook again.
+
+This is called the Visibility Problem.
+Even though there is no race condition (only one thread is writing), the change is not visible to the other thread.
+
+### Why Does Java Do This?
+For performance.
+
+- Modern computers have multiple CPU cores.
+- Each core has its own fast cache memory.
+- Java allows threads to keep a private copy of variables in their cache to run faster.
+- Without special instructions, threads don’t always refresh from main memory.
+
+So the worker thread keeps reading from its fast cache (old value) instead of main memory (new value).
+---
+Key Point to Remember
+
+- Mutual Exclusion (synchronized) = Solves “who can access” (prevents race conditions).
+- Visibility = Solves “does everyone see the latest value?”.
+
+These are two different problems.
+`synchronized` solves both, but in many simple cases (like this flag), we don’t want the heavy locking. We just want visibility.
+That’s why Java gives us `volatile` keyword.
 
 ---
 
@@ -154,8 +197,8 @@ This is where most developers get confused. Study this carefully:
 ┌─────────────────────┬──────────────────────┬──────────────────────┐
 │                     │      volatile        │    synchronized      │
 ├─────────────────────┼──────────────────────┼──────────────────────┤
-│ Visibility          │         ✅           │         ✅           │
-│ Mutual Exclusion    │         ❌           │         ✅           │
+│ Visibility          │         ✅           │         ✅          │
+│ Mutual Exclusion    │         ❌           │         ✅          │
 │ Atomicity           │    only for reads    │         ✅           │
 │                     │    and writes        │                      │
 │ Performance         │      Faster          │       Slower         │
