@@ -5,19 +5,21 @@
 
 ## 4.1 The Problem — Race Condition
 
-A **race condition** occurs when two or more threads access shared data simultaneously, and the final result depends on the timing/order of execution — which is unpredictable.
+A **race condition** occurs when two or more threads access and modify the same shared data at the same time, and the final result depends on which thread finishes first (the "race").
 
-Let's see one happen live.
+- The outcome is unpredictable.
+- You get different results every time you run the program.
+- It often leads to wrong data, bugs that are very hard to reproduce and debug.
 
 ### The Broken Counter
 
 ```java
 public class BrokenCounter {
 
-    private int count = 0; // shared on the HEAP
+    private int count = 0; // This is SHARED data (lives on the HEAP)
 
     public void increment() {
-        count++; // looks like one operation — it is NOT
+        count++;// Looks simple, but it's NOT safe!
     }
 
     public int getCount() {
@@ -28,7 +30,7 @@ public class BrokenCounter {
 
         BrokenCounter counter = new BrokenCounter();
 
-        // 2 threads, each incrementing 1000 times
+       // Two threads, each trying to increment 1000 times
         // Expected final count: 2000
         Thread t1 = new Thread(() -> {
             for (int i = 0; i < 1000; i++) counter.increment();
@@ -40,8 +42,9 @@ public class BrokenCounter {
 
         t1.start();
         t2.start();
-        t1.join();
-        t2.join();
+        t1.join(); // Wait for thread-1 to finish
+        t2.join(); // Wait for thread-2 to finish
+
 
         System.out.println("Expected: 2000");
         System.out.println("Actual:   " + counter.getCount()); // 1643? 1821? 1956? Never 2000
