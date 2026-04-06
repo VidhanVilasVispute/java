@@ -24,18 +24,21 @@ That's exactly what `wait()` and `notify()` provide.
 
 ## 6.2 The Three Methods — On `Object`, Not `Thread`
 
-This surprises most developers. These methods are on `Object` — meaning **every Java object** can be used as a communication point between threads.
+`wait()`, `notify()`, and `notifyAll()` are **NOT** methods of the `Thread` class.
 
-```
-wait()       → current thread releases the lock and sleeps
-               until another thread calls notify() on the same object
+They are methods of the **Object** class.
 
-notify()     → wakes up ONE thread waiting on this object
-               (which one — unpredictable, up to JVM)
+That means **every Java object** can be used as a meeting point for threads to talk to each other.
 
-notifyAll()  → wakes up ALL threads waiting on this object
-               they all compete for the lock — one wins, others go BLOCKED
-```
+Example:
+- A simple `Object lock = new Object();` can be used for communication.
+- Even `this`, a String, or any custom object can be used.
+
+| Method          | What it does (in very easy words)                                                                 | Who calls it          |
+|-----------------|----------------------------------------------------------------------------------------------------|-----------------------|
+| **wait()**      | "I am going to sleep and release the lock. Wake me up when someone notifies me."                  | The waiting thread    |
+| **notify()**    | "Wake up **one** thread that is waiting on this object." (JVM chooses which one)                   | The notifying thread  |
+| **notifyAll()** | "Wake up **all** threads that are waiting on this object."                                        | The notifying thread  |
 
 ### The Iron Rule
 > **All three must be called inside a `synchronized` block on the same object.**
@@ -50,7 +53,22 @@ synchronized (lock) {
 
 lock.wait();          // ❌ IllegalMonitorStateException
 ```
+### Simple Real-Life Analogy
 
+Imagine a **restaurant kitchen** with only **one waiter** (the lock):
+
+- Customers (threads) want food.
+- The cook (one thread) is preparing food.
+- When the cook is busy, customers wait.
+
+How they communicate:
+
+- Customer says: `"I will wait()"` → sits down and releases the table (releases lock).
+- Cook finishes food and says: `"notify()"` → wakes up **one** waiting customer.
+- Or cook says: `"notifyAll()"` → wakes up **all** waiting customers.
+
+But nobody can shout "wait" or "notify" while standing outside the restaurant.  
+They can only do it **while holding the table** (inside synchronized block).
 ---
 
 ## 6.3 What `wait()` Actually Does — Step by Step
@@ -97,14 +115,38 @@ synchronized(lock) {                 synchronized(lock) {
 
 This is the canonical use case for `wait()`/`notify()`. It appears in almost every Java interview.
 
-**The scenario:**
-- **Producer** generates items and puts them in a shared buffer
-- **Consumer** takes items from the buffer and processes them
-- Buffer has a maximum capacity
+### What is the Producer-Consumer Problem?
+    It's a classic situation where two threads need to work together using a shared buffer (like a box or queue).
 
-**The rules:**
-- Producer must wait if buffer is **full**
-- Consumer must wait if buffer is **empty**
+- Producer → Makes things (puts items into the buffer)
+- Consumer → Takes things (removes items from the buffer)
+
+Rules:
+
+- If the buffer is full, Producer must wait.
+- If the buffer is empty, Consumer must wait.
+
+This is exactly where `wait()` and `notify()` are used.
+
+
+### Simple Real-Life Analogy
+
+Imagine a **small dining table** (the buffer) that can hold only **5 plates**.
+
+- **Producer** = Chef (keeps cooking and putting plates on the table)
+- **Consumer** = Waiter (keeps taking plates from the table to serve customers)
+
+What happens?
+- If the table is full (5 plates), Chef should **stop cooking** and wait.
+- If the table is empty (0 plates), Waiter should **stop** and wait.
+
+They need to **communicate** with each other:
+- Chef says: "Table is full, you take some!"
+- Waiter says: "Table is empty, please cook more!"
+
+This communication is done using `wait()` and `notify()`.
+
+---
 
 ### ShopSphere Context
 
@@ -114,179 +156,94 @@ Your **Order Service** (producer) places orders into a queue. Your **Notificatio
 
 ## 6.5 Implementation — Producer Consumer with `wait()`/`notifyAll()`
 
+
+### Simple Code Example (Very Easy to Understand)
+
 ```java
-import java.util.LinkedList;
-import java.util.Queue;
+public class ProducerConsumerExample {
 
-public class OrderNotificationPipeline {
+    private final List<String> buffer = new ArrayList<>();
+    private final int MAX_SIZE = 5;           // Buffer can hold only 5 items
+    private final Object lock = new Object(); // Communication object
 
-    // ─── Shared Buffer ────────────────────────────────────────────────
-    static class OrderQueue {
-
-        private final Queue<String> queue = new LinkedList<>();
-        private final int MAX_SIZE;
-
-        public OrderQueue(int maxSize) {
-            this.MAX_SIZE = maxSize;
-        }
-
-        // Called by Order Service threads
-        public synchronized void produce(String orderId) throws InterruptedException {
-
-            // ✅ ALWAYS use while, never if — explained in 6.6
-            while (queue.size() == MAX_SIZE) {
-                System.out.println("[" + Thread.currentThread().getName()
-                    + "] Queue FULL (" + MAX_SIZE + "). Waiting...");
-                wait(); // release lock, sleep until notified
-            }
-
-            queue.offer(orderId);
-            System.out.println("[" + Thread.currentThread().getName()
-                + "] Produced: " + orderId
-                + " | Queue size: " + queue.size());
-
-            notifyAll(); // wake up all waiting consumers
-        }
-
-        // Called by Notification Service threads
-        public synchronized String consume() throws InterruptedException {
-
-            // ✅ ALWAYS use while, never if
-            while (queue.isEmpty()) {
-                System.out.println("[" + Thread.currentThread().getName()
-                    + "] Queue EMPTY. Waiting...");
-                wait(); // release lock, sleep until notified
-            }
-
-            String orderId = queue.poll();
-            System.out.println("[" + Thread.currentThread().getName()
-                + "] Consumed: " + orderId
-                + " | Queue size: " + queue.size());
-
-            notifyAll(); // wake up all waiting producers
-            return orderId;
-        }
-
-        public synchronized int size() {
-            return queue.size();
-        }
-    }
-
-    // ─── Producer (Order Service) ─────────────────────────────────────
-    static class OrderService implements Runnable {
-
-        private final OrderQueue orderQueue;
-        private final String[] orders;
-
-        public OrderService(OrderQueue queue, String[] orders) {
-            this.orderQueue = queue;
-            this.orders = orders;
-        }
-
-        @Override
+    // Producer Thread
+    class Producer implements Runnable {
         public void run() {
-            try {
-                for (String orderId : orders) {
-                    orderQueue.produce(orderId);
-                    Thread.sleep(300); // simulate order creation delay
+            for (int i = 1; i <= 10; i++) {
+                synchronized (lock) {
+                    while (buffer.size() == MAX_SIZE) {        // Buffer full?
+                        try {
+                            System.out.println("Producer: Buffer full, waiting...");
+                            lock.wait();                       // Release lock and sleep
+                        } catch (InterruptedException e) {}
+                    }
+
+                    buffer.add("Order-" + i);
+                    System.out.println("Producer: Added Order-" + i + " | Buffer size: " + buffer.size());
+                    
+                    lock.notify();   // Wake up Consumer
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
         }
     }
 
-    // ─── Consumer (Notification Service) ─────────────────────────────
-    static class NotificationService implements Runnable {
-
-        private final OrderQueue orderQueue;
-        private final int totalToConsume;
-
-        public NotificationService(OrderQueue queue, int totalToConsume) {
-            this.orderQueue = queue;
-            this.totalToConsume = totalToConsume;
-        }
-
-        @Override
+    // Consumer Thread
+    class Consumer implements Runnable {
         public void run() {
-            try {
-                for (int i = 0; i < totalToConsume; i++) {
-                    String orderId = orderQueue.consume();
-                    sendEmail(orderId);
-                    Thread.sleep(500); // simulate email sending
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
+            for (int i = 1; i <= 10; i++) {
+                synchronized (lock) {
+                    while (buffer.isEmpty()) {                 // Buffer empty?
+                        try {
+                            System.out.println("Consumer: Buffer empty, waiting...");
+                            lock.wait();                       // Release lock and sleep
+                        } catch (InterruptedException e) {}
+                    }
 
-        private void sendEmail(String orderId) {
-            System.out.println("[" + Thread.currentThread().getName()
-                + "] ✉ Email sent for: " + orderId);
+                    String order = buffer.remove(0);
+                    System.out.println("Consumer: Processed " + order);
+                    
+                    lock.notify();   // Wake up Producer
+                }
+            }
         }
     }
 
-    // ─── Main ─────────────────────────────────────────────────────────
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
+        ProducerConsumerExample example = new ProducerConsumerExample();
+        
+        Thread producerThread = new Thread(example.new Producer(), "Producer");
+        Thread consumerThread = new Thread(example.new Consumer(), "Consumer");
 
-        OrderQueue sharedQueue = new OrderQueue(3); // max 3 orders in queue
-
-        String[] incomingOrders = {
-            "ORD-001", "ORD-002", "ORD-003",
-            "ORD-004", "ORD-005", "ORD-006"
-        };
-
-        // 2 producers (two instances of Order Service)
-        Thread producer1 = new Thread(
-            new OrderService(sharedQueue, new String[]{"ORD-001", "ORD-002", "ORD-003"}),
-            "order-service-1"
-        );
-        Thread producer2 = new Thread(
-            new OrderService(sharedQueue, new String[]{"ORD-004", "ORD-005", "ORD-006"}),
-            "order-service-2"
-        );
-
-        // 2 consumers (two Notification Service workers)
-        Thread consumer1 = new Thread(
-            new NotificationService(sharedQueue, 3),
-            "notification-worker-1"
-        );
-        Thread consumer2 = new Thread(
-            new NotificationService(sharedQueue, 3),
-            "notification-worker-2"
-        );
-
-        producer1.start();
-        producer2.start();
-        consumer1.start();
-        consumer2.start();
-
-        producer1.join();
-        producer2.join();
-        consumer1.join();
-        consumer2.join();
-
-        System.out.println("\n✅ All orders processed and emails sent.");
+        producerThread.start();
+        consumerThread.start();
     }
 }
 ```
 
-**Sample Output:**
-```
-[order-service-1] Produced: ORD-001 | Queue size: 1
-[order-service-2] Produced: ORD-004 | Queue size: 2
-[notification-worker-1] Consumed: ORD-001 | Queue size: 1
-[notification-worker-1] ✉ Email sent for: ORD-001
-[order-service-1] Produced: ORD-002 | Queue size: 2
-[order-service-2] Produced: ORD-005 | Queue size: 3
-[order-service-1] Queue FULL (3). Waiting...
-[order-service-2] Queue FULL (3). Waiting...
-[notification-worker-2] Consumed: ORD-004 | Queue size: 2
-[notification-worker-2] ✉ Email sent for: ORD-004
-[order-service-1] Produced: ORD-003 | Queue size: 3
-...
-✅ All orders processed and emails sent.
-```
+---
+
+### How It Works (Super Simple Steps)
+
+1. Producer wants to add an item.
+2. It checks: Is buffer full?  
+   → If yes → `wait()` (goes to sleep and releases lock)
+3. Consumer wants to take an item.
+4. It checks: Is buffer empty?  
+   → If yes → `wait()` (goes to sleep)
+5. When Producer adds an item → calls `notify()` to wake Consumer.
+6. When Consumer removes an item → calls `notify()` to wake Producer.
+
+Both threads keep talking using the same `lock` object.
+
+---
+
+### Key Points to Remember
+
+- Always use **`while`** loop with `wait()` (not `if`).  
+  Reason: After waking up, the condition might still not be true.
+- `wait()` always releases the lock so the other thread can work.
+- `notify()` wakes only **one** waiting thread.
+- Both Producer and Consumer use the **same lock object** for communication.
 
 ---
 
