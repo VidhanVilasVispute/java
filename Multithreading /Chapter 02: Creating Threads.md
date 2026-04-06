@@ -104,6 +104,19 @@ But if `EmailService` already extends `Thread`, it's impossible.
 `Runnable` is a functional interface with a single method: `run()`. You implement it and pass it to a `Thread` object.
 
 ```java
+@FunctionalInterface
+public interface Runnable {
+    void run();        // Just this one method
+}
+```
+
+Your job is to:
+
+- Create a class that implements Runnable
+- Write your task logic inside the run() method
+- Pass this object to a Thread constructor
+
+```java
 class EmailTask implements Runnable {
 
     private String recipient;
@@ -136,15 +149,60 @@ public class Way2_Runnable {
 }
 ```
 
+Key Point:
+- `EmailTask` is not a Thread. It is just a task that can be executed by a thread.
+
 ### Why This Is Better
 
 Your task (`EmailTask`) and the execution mechanism (`Thread`) are **separated**. `EmailTask` is just a plain class that implements `Runnable` — it can still extend `BaseService`, be a Spring bean, whatever you want. This separation is the right design.
 
+
+```Java
+
+@Service
+public class EmailService extends BaseService implements Runnable {   // Possible now!
+    
+    // You can still extend BaseService and implement Runnable
+    ...
+}
+```
+
+Important Concepts Explained
+
+1. Separation of Concerns (Best Design Principle)
+- EmailTask = What to do (the job)
+- Thread     = How to execute it (the worker)
+They are now separate. This is good software design.
+
+2. Thread Naming
+```Java
+new Thread(runnable, "notification-thread")
+```
+
+Giving meaningful names helps a lot when debugging. You can easily see which thread is doing what in logs.
+
+3. Runnable is a Functional Interface
+Since Java 8, you can write it using lambda expression (much shorter):
+
+```Java
+
+Runnable task = () -> {
+    System.out.println("Sending email...");
+};
+
+Thread t = new Thread(task);
+t.start();
+```
+
+Order is still non-deterministic.
 ---
 
 ## 2.3 Way 3 — Lambda (Most Common in Modern Java)
 
-Since `Runnable` is a `@FunctionalInterface`, you can replace the entire class with a lambda. This is what you'll write 90% of the time in modern Java.
+- Since Java 8, `Runnable` is a Functional Interface (it has only one abstract method: `run()`).
+- Because of this, instead of creating a separate class that implements `Runnable`, you can directly write the task using a lambda expression (`() -> { ... }`).
+- This makes the code much shorter, cleaner, and more readable.
+- This is the way most developers write threads in modern Java (especially in Spring Boot projects).
 
 ```java
 public class Way3_Lambda {
@@ -164,6 +222,15 @@ public class Way3_Lambda {
     }
 }
 ```
+What does () -> { ... } mean?
+
+- () → No parameters (because run() method takes no arguments)
+- -> → "goes to" or "does this"
+- { ... } → The actual code that will run on the new thread
+
+It's like saying:
+- "Create a thread that runs this block of code"
+
 
 ### ShopSphere Example — What This Looks Like in Real Code
 
@@ -187,7 +254,13 @@ public void sendWelcomeEmailAsync(String userEmail, String userName) {
     System.out.println("Email dispatched asynchronously");
 }
 ```
+Why is this useful in real applications?
 
+- When a user registers, you don’t want to make them wait for the welcome email to be sent.
+- You want to send the email in the background (asynchronously).
+- The main request thread stays free and can immediately return a success response to the user.
+
+This improves user experience and application performance.
 ---
 
 ## 2.4 The Critical Trap — `start()` vs `run()`
