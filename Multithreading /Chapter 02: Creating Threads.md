@@ -5,7 +5,9 @@
 
 ## 2.1 Way 1 — Extending the `Thread` Class
 
-The oldest way. You subclass `Thread` and override its `run()` method.
+This is the oldest and most basic way to create a new thread in Java.
+You create your own class that inherits (extends) from Java's built-in `Thread` class, and then you override the `run()` method.
+Whatever code you put inside the `run()` method will run on the new separate thread.
 
 ```java
 class MyThread extends Thread {
@@ -42,17 +44,58 @@ public class Way1_ExtendThread {
 [Thread-0] Executing: Send Welcome Email
 [Thread-1] Executing: Update User Index
 ```
+Key Point:
+`run()` is a special method. When you call `start()`, Java automatically calls `run()` on the new thread.
+
+Why `start()` and not `run()`?
+
+- `t1.start()` → Tells Java: "Please create a new thread and run the `run()` method on it."
+- `t1.run()` → Wrong! This would run the code on the same main thread (no new thread is created).
+
+`start()` is the magic that actually spawns a real new thread
+
+Important Lesson:
+
+- The main thread does not wait for t1 and t2 to finish.
+- As soon as you call   `start()`, the main thread continues immediately.
+- The two new threads run at the same time (concurrently).
+- The order of output is not guaranteed — this is normal in multithreading.
 
 ### The Problem With This Approach
 
 Java has **single inheritance**. If your class extends `Thread`, it can't extend anything else. In Spring Boot, your service classes often need to extend or be managed beans — you can't also extend `Thread`.
 
-```java
-// This is IMPOSSIBLE
-class UserService extends BaseService, Thread { } // ❌ Java doesn't allow this
+Meaning: A class can extend only one class.
+```Java
+
+class MyThread extends Thread {     // Already extending Thread
+    ...
+}
+```
+Now you cannot do this:
+
+```Java
+
+class MyService extends SomeOtherClass {   // Not allowed!
+
 ```
 
-This is why Way 1 is rarely used in production. It's good to know, but you'll almost never write it.
+Real-life problem in Spring Boot / Enterprise projects:
+
+- Your classes are usually Service, Repository, or Component classes.
+- These are managed by Spring.
+- You often need to extend other classes or implement multiple interfaces.
+- If your task class extends Thread, you lose the ability to extend anything else.
+
+Example of what you might want:
+
+```Java
+
+class EmailService extends BaseService {   // You want this
+    ...
+}
+```
+But if `EmailService` already extends `Thread`, it's impossible.
 
 ---
 
