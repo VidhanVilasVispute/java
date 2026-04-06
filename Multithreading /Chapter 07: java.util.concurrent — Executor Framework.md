@@ -348,21 +348,48 @@ public class FutureDemo {
 [main] Inventory status: IN_STOCK   ← arrives after ~2s
 ```
 
-### All `Future` Methods
+### Most Important Methods of Future
+
+| Method                              | Simple Meaning                                      | When to use                          |
+|-------------------------------------|-----------------------------------------------------|--------------------------------------|
+| `future.get()`                      | Wait until task is done and give me the result      | When you need the answer             |
+| `future.get(5, TimeUnit.SECONDS)`   | Wait maximum 5 seconds                              | To avoid waiting forever             |
+| `future.isDone()`                   | Is the task finished? (success or failed)           | To check without blocking            |
+| `future.isCancelled()`              | Was the task cancelled?                             | After calling cancel()               |
+| `future.cancel(true)`               | Try to stop the task                                | If you don’t need the task anymore   |
+ture.cancel(true)          // attempt to cancel; true = interrupt if running
+```
+```
+### How Exceptions are Handled
+
+This is very important:
+
+- If your task throws an exception, it is **not** thrown immediately.
+- The exception is **wrapped** and saved inside the `Future`.
+- When you call `future.get()`, the exception is thrown as **`ExecutionException`**.
 
 ```java
-future.get()                 // block until done, return result, throw if exception
-future.get(3, TimeUnit.SECONDS) // block max 3s, throws TimeoutException if not done
-future.isDone()              // true if completed (success OR exception OR cancelled)
-future.isCancelled()         // true if cancelled before completion
-future.cancel(true)          // attempt to cancel; true = interrupt if running
+try {
+    String result = future.get();
+} catch (ExecutionException e) {
+    System.out.println("Task failed because: " + e.getCause().getMessage());
+} catch (InterruptedException e) {
+    System.out.println("Waiting was interrupted");
+}
 ```
+
+**Tip**: Always use `e.getCause()` to see the original exception.
 
 ---
 
 ## 7.7 Shutdown — The Right Way
 
-**Always shut down your executor.** If you don't, the threads keep running and your JVM never exits.
+**Future** is like a **receipt** or **tracking number** you get after submitting a task to the thread pool.
+
+- The task is running in the background.
+- The result is **not ready yet** — it will come “in the future”.
+- You can continue doing other work while waiting.
+- When you need the result, you ask the Future for it.
 
 ```java
 ExecutorService pool = Executors.newFixedThreadPool(4);
