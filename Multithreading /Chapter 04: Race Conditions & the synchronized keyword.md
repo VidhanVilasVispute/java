@@ -506,7 +506,7 @@ public class InventoryService {
     public boolean reserveStockSafe(String productId, int quantity) {
         synchronized (this) {
             int available = stock.get(productId);    // READ  ─┐
-            if (available >= quantity) {                        │ atomic
+            if (available >= quantity) {                    // │ atomic
                 stock.put(productId, available - quantity); // WRITE ─┘
                 return true;
             }
